@@ -117,6 +117,10 @@ export const equipmentAPI = {
   
   getFilters: (): Promise<{ categories: string[]; departments: string[]; conditions: string[] }> =>
     apiGet('/equipment/meta/filters'),
+
+  // Scrap equipment
+  scrap: (id: number, reason?: string, notes?: string): Promise<{ message: string; equipment: Equipment }> =>
+    apiPut(`/equipment/${id}/scrap`, { reason, notes }),
 };
 
 // Teams API
@@ -238,6 +242,25 @@ export const adminAPI = {
   
   updateSettings: (data: any): Promise<{ settings: any }> =>
     apiPut('/admin/settings', data),
+};
+
+// AI Assistant API
+export const aiAssistantAPI = {
+  // Send message to AI assistant
+  sendMessage: (message: string, context?: string): Promise<{
+    success: boolean;
+    response: string;
+    timestamp: string;
+  }> =>
+    apiPost('/ai-assistant/chat', { message, context }),
+  
+  // Get AI suggestions for maintenance tasks
+  getSuggestions: (equipmentType?: string, issue?: string, urgency?: string): Promise<{
+    success: boolean;
+    suggestions: string;
+    timestamp: string;
+  }> =>
+    apiPost('/ai-assistant/suggestions', { equipmentType, issue, urgency }),
 };
 
 export default api;

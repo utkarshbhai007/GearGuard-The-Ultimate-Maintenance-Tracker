@@ -11,6 +11,7 @@ interface ScheduleMaintenanceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  preselectedDate?: Date | null;
 }
 
 interface MaintenanceFormData {
@@ -26,7 +27,12 @@ interface MaintenanceFormData {
   special_instructions?: string;
 }
 
-const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ isOpen, onClose, onSuccess }) => {
+const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess, 
+  preselectedDate 
+}) => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
@@ -54,13 +60,20 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ isO
   useEffect(() => {
     if (isOpen) {
       fetchData();
-      // Set default scheduled date to next week
-      const nextWeek = new Date();
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      nextWeek.setHours(9, 0, 0, 0); // 9 AM
-      setValue('scheduled_date', nextWeek.toISOString().slice(0, 16));
+      // Set preselected date if provided
+      if (preselectedDate) {
+        const dateTime = new Date(preselectedDate);
+        dateTime.setHours(9, 0, 0, 0); // Set to 9 AM
+        setValue('scheduled_date', dateTime.toISOString().slice(0, 16));
+      } else {
+        // Set default scheduled date to next week
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        nextWeek.setHours(9, 0, 0, 0); // 9 AM
+        setValue('scheduled_date', nextWeek.toISOString().slice(0, 16));
+      }
     }
-  }, [isOpen, setValue]);
+  }, [isOpen, preselectedDate, setValue]);
 
   useEffect(() => {
     // Auto-fill team and subject when equipment is selected

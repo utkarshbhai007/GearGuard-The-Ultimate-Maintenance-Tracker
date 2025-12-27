@@ -78,6 +78,7 @@ gearguard/
 - ✅ **Kanban Board** - Visual task management
 - ✅ **Mobile Responsive** - Works on all devices
 - ✅ **Modern UI** - Beautiful interface with animations
+- ✅ **AI Assistant** - Intelligent maintenance guidance with Groq API
 
 ### **Technical Features**
 - ✅ **Production Ready** - 100% test coverage and verification
@@ -148,6 +149,9 @@ JWT_EXPIRES_IN=7d
 PORT=5000
 NODE_ENV=development
 CLIENT_URL=http://localhost:3000
+
+# AI Assistant
+GROQ_API_KEY=your_groq_api_key_here
 ```
 
 ## 🚀 **Deployment**

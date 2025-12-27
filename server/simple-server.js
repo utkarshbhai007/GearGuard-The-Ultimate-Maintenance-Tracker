@@ -12,6 +12,7 @@ const teamRoutes = require('./routes/teams');
 const requestRoutes = require('./routes/requests');
 const dashboardRoutes = require('./routes/dashboard');
 const adminRoutes = require('./routes/admin');
+const aiAssistantRoutes = require('./routes/ai-assistant');
 
 const app = express();
 const server = createServer(app);
@@ -66,6 +67,7 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai-assistant', aiAssistantRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

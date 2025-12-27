@@ -10,6 +10,7 @@ interface CreateRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  preselectedDate?: Date | null;
 }
 
 interface RequestFormData {
@@ -22,7 +23,12 @@ interface RequestFormData {
   scheduled_date?: string;
 }
 
-const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose, onSuccess }) => {
+const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess, 
+  preselectedDate 
+}) => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
@@ -44,8 +50,14 @@ const CreateRequestModal: React.FC<CreateRequestModalProps> = ({ isOpen, onClose
   useEffect(() => {
     if (isOpen) {
       fetchData();
+      // Set preselected date if provided
+      if (preselectedDate) {
+        const dateString = preselectedDate.toISOString().split('T')[0];
+        setValue('scheduled_date', dateString);
+        setValue('request_type', 'preventive'); // Default to preventive for scheduled requests
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, preselectedDate, setValue]);
 
   useEffect(() => {
     // Auto-fill team when equipment is selected

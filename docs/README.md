@@ -21,6 +21,7 @@ Welcome to the GearGuard Maintenance Management System documentation. This folde
 ### **For Ongoing Operations:**
 - **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Git Cleanup Summary](GIT_CLEANUP_SUMMARY.md)** - Repository maintenance and cleanup procedures
+- **[AI Assistant Guide](AI_ASSISTANT_IMPLEMENTATION.md)** - AI-powered maintenance assistance
 
 ---
 

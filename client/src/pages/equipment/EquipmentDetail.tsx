@@ -16,6 +16,7 @@ import Badge from '../../components/common/Badge';
 import CreateRequestModal from '../../components/modals/CreateRequestModal';
 import ScheduleMaintenanceModal from '../../components/modals/ScheduleMaintenanceModal';
 import EditEquipmentModal from '../../components/modals/EditEquipmentModal';
+import ScrapEquipmentModal from '../../components/modals/ScrapEquipmentModal';
 import { getStatusColor, getConditionColor, formatDate, formatRelativeTime } from '../../utils/helpers';
 import toast from 'react-hot-toast';
 
@@ -29,6 +30,7 @@ const EquipmentDetail: React.FC = () => {
   const [showCreateRequestModal, setShowCreateRequestModal] = useState(false);
   const [showScheduleMaintenanceModal, setShowScheduleMaintenanceModal] = useState(false);
   const [showEditEquipmentModal, setShowEditEquipmentModal] = useState(false);
+  const [showScrapEquipmentModal, setShowScrapEquipmentModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -82,6 +84,10 @@ const EquipmentDetail: React.FC = () => {
     setShowEditEquipmentModal(true);
   };
 
+  const handleScrapEquipment = () => {
+    setShowScrapEquipmentModal(true);
+  };
+
   const handleModalSuccess = () => {
     // Refresh equipment details and maintenance requests
     fetchEquipmentDetails();
@@ -126,27 +132,55 @@ const EquipmentDetail: React.FC = () => {
           </div>
         </div>
         
-        {/* Smart Button - Maintenance Requests */}
+        {/* Smart Buttons */}
         <div className="flex items-center space-x-3">
           <button
             onClick={handleEditEquipment}
             className="btn-outline flex items-center"
+            disabled={equipment?.status === 'scrapped'}
           >
             <PencilIcon className="w-4 h-4 mr-2" />
             Edit
           </button>
+          
+          {/* Smart Maintenance Button with Badge */}
           <button
             onClick={fetchAllRequests}
-            className="btn-primary relative"
+            className="btn-primary relative flex items-center"
+            title={`View all maintenance requests for ${equipment?.name}`}
           >
             <WrenchScrewdriverIcon className="w-5 h-5 mr-2" />
             Maintenance
             {requestsCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-lg animate-pulse">
                 {requestsCount}
               </span>
             )}
           </button>
+
+          {/* Scrap Button - Only show if equipment is not already scrapped */}
+          {equipment?.status !== 'scrapped' && (
+            <button
+              onClick={handleScrapEquipment}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors flex items-center"
+              title="Mark equipment as scrapped"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Scrap
+            </button>
+          )}
+
+          {/* Scrapped Indicator */}
+          {equipment?.status === 'scrapped' && (
+            <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              SCRAPPED
+            </div>
+          )}
         </div>
       </div>
 
@@ -368,6 +402,13 @@ const EquipmentDetail: React.FC = () => {
       <EditEquipmentModal
         isOpen={showEditEquipmentModal}
         onClose={() => setShowEditEquipmentModal(false)}
+        onSuccess={handleModalSuccess}
+        equipment={equipment}
+      />
+
+      <ScrapEquipmentModal
+        isOpen={showScrapEquipmentModal}
+        onClose={() => setShowScrapEquipmentModal(false)}
         onSuccess={handleModalSuccess}
         equipment={equipment}
       />

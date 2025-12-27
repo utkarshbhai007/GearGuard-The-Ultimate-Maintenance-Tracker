@@ -12,8 +12,10 @@ import {
   MagnifyingGlassIcon,
   SparklesIcon,
   BoltIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAIAssistant } from '../../contexts/AIAssistantContext';
 import { cn } from '../../utils/helpers';
 import Avatar from '../common/Avatar';
 import AddEquipmentModal from '../modals/AddEquipmentModal';
@@ -23,6 +25,7 @@ import toast from 'react-hot-toast';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
+  const { toggleChatbox } = useAIAssistant();
   const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false);
   const [showCreateRequestModal, setShowCreateRequestModal] = useState(false);
   const [showScheduleMaintenanceModal, setShowScheduleMaintenanceModal] = useState(false);
@@ -86,6 +89,18 @@ const Header: React.FC = () => {
 
         {/* Right side */}
         <div className="flex items-center space-x-4 ml-6">
+          {/* AI Assistant */}
+          <button
+            onClick={toggleChatbox}
+            className="relative p-3 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-xl hover:bg-white/60 transition-all duration-200 backdrop-blur-sm group"
+            title="AI Assistant"
+          >
+            <ChatBubbleLeftRightIcon className="h-6 w-6" />
+            <div className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <SparklesIcon className="h-2.5 w-2.5" />
+            </div>
+          </button>
+
           {/* Notifications */}
           <Menu as="div" className="relative">
             <Menu.Button className="relative p-3 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-xl hover:bg-white/60 transition-all duration-200 backdrop-blur-sm">

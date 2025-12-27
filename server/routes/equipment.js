@@ -423,4 +423,61 @@ router.get('/meta/filters', authenticateToken, async (req, res) => {
   }
 });
 
+// Scrap equipment - Mark equipment as scrapped
+router.put('/:id/scrap', authenticateToken, authorize('admin', 'manager'), async (req, res) => {
+  try {
+    const { reason, notes } = req.body;
+    const equipment = await Equipment.findByPk(req.params.id);
+
+    if (!equipment) {
+      return res.status(404).json({ message: 'Equipment not found' });
+    }
+
+    // Update equipment status to scrapped
+    await equipment.update({
+      status: 'scrapped',
+      notes: `${equipment.notes || ''}\n\n[SCRAPPED] ${new Date().toISOString()}: ${reason || 'Equipment marked as scrapped'}\nAdditional notes: ${notes || 'None'}\nScrapped by: ${req.user.first_name} ${req.user.last_name}`.trim()
+    });
+
+    // Cancel all pending maintenance requests for this equipment
+    await MaintenanceRequest.update(
+      { 
+        status: 'cancelled',
+        notes: `${MaintenanceRequest.notes || ''}\n\n[AUTO-CANCELLED] ${new Date().toISOString()}: Equipment has been scrapped`.trim()
+      },
+      {
+        where: {
+          equipment_id: req.params.id,
+          status: { [Op.in]: ['new', 'assigned', 'in_progress', 'on_hold'] }
+        }
+      }
+    );
+
+    // Fetch updated equipment with associations
+    const updatedEquipment = await Equipment.findByPk(req.params.id, {
+      include: [
+        {
+          model: Team,
+          as: 'maintenanceTeam',
+          attributes: ['id', 'name', 'specialization']
+        },
+        {
+          model: User,
+          as: 'assignedTechnician',
+          attributes: ['id', 'first_name', 'last_name', 'email']
+        }
+      ]
+    });
+
+    res.json({
+      message: 'Equipment marked as scrapped successfully',
+      equipment: updatedEquipment
+    });
+
+  } catch (error) {
+    console.error('Scrap equipment error:', error);
+    res.status(500).json({ message: 'Failed to scrap equipment' });
+  }
+});
+
 module.exports = router;

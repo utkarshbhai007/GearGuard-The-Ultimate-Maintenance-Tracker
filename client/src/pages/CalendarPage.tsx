@@ -4,6 +4,8 @@ import { requestsAPI } from '../utils/api';
 import { MaintenanceRequest } from '../types';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Badge from '../components/common/Badge';
+import CreateRequestModal from '../components/modals/CreateRequestModal';
+import ScheduleMaintenanceModal from '../components/modals/ScheduleMaintenanceModal';
 import { formatDate, formatDateTime, getPriorityColor } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
@@ -12,6 +14,9 @@ const CalendarPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showCreateRequestModal, setShowCreateRequestModal] = useState(false);
+  const [showScheduleMaintenanceModal, setShowScheduleMaintenanceModal] = useState(false);
+  const [preselectedDate, setPreselectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchCalendarEvents();
@@ -82,6 +87,36 @@ const CalendarPage: React.FC = () => {
     });
   };
 
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+    // If the date is in the future or today, allow scheduling
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const clickedDate = new Date(date);
+    clickedDate.setHours(0, 0, 0, 0);
+    
+    if (clickedDate >= today) {
+      setPreselectedDate(date);
+    }
+  };
+
+  const handleScheduleForDate = (date: Date) => {
+    setPreselectedDate(date);
+    setShowScheduleMaintenanceModal(true);
+  };
+
+  const handleCreateRequest = () => {
+    setShowCreateRequestModal(true);
+  };
+
+  const handleRequestCreated = () => {
+    fetchCalendarEvents();
+    setShowCreateRequestModal(false);
+    setShowScheduleMaintenanceModal(false);
+    setPreselectedDate(null);
+    toast.success('Maintenance request created successfully!');
+  };
+
   const days = getDaysInMonth(currentDate);
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -107,7 +142,10 @@ const CalendarPage: React.FC = () => {
             View and schedule preventive maintenance
           </p>
         </div>
-        <button className="btn-primary">
+        <button 
+          onClick={handleCreateRequest}
+          className="btn-primary"
+        >
           <PlusIcon className="w-5 h-5 mr-2" />
           Schedule Maintenance
         </button>
@@ -150,25 +188,40 @@ const CalendarPage: React.FC = () => {
               const dayEvents = day ? getEventsForDate(day) : [];
               const isToday = day && day.toDateString() === new Date().toDateString();
               const isSelected = day && selectedDate && day.toDateString() === selectedDate.toDateString();
+              const isPastDate = day && day < new Date(new Date().setHours(0, 0, 0, 0));
+              const canSchedule = day && !isPastDate;
 
               return (
                 <div
                   key={index}
-                  className={`min-h-32 p-2 border-b border-r border-gray-200 ${
-                    day ? 'cursor-pointer hover:bg-gray-50' : 'bg-gray-50'
-                  } ${isSelected ? 'bg-blue-50' : ''}`}
-                  onClick={() => day && setSelectedDate(day)}
+                  className={`min-h-32 p-2 border-b border-r border-gray-200 relative ${
+                    day ? `cursor-pointer transition-colors duration-200 ${
+                      canSchedule ? 'hover:bg-blue-50' : 'hover:bg-gray-50'
+                    }` : 'bg-gray-50'
+                  } ${isSelected ? 'bg-blue-50 ring-2 ring-blue-500 ring-inset' : ''} ${
+                    isPastDate ? 'bg-gray-50 text-gray-400' : ''
+                  }`}
+                  onClick={() => day && handleDateClick(day)}
+                  title={canSchedule ? 'Click to schedule maintenance' : ''}
                 >
                   {day && (
                     <>
-                      <div className={`text-sm font-medium mb-2 ${
-                        isToday ? 'text-blue-600' : 'text-gray-900'
+                      <div className={`text-sm font-medium mb-2 flex items-center justify-between ${
+                        isToday ? 'text-blue-600' : isPastDate ? 'text-gray-400' : 'text-gray-900'
                       }`}>
-                        {day.getDate()}
-                        {isToday && (
-                          <span className="ml-1 text-xs bg-blue-600 text-white px-1 rounded">
-                            Today
-                          </span>
+                        <span>
+                          {day.getDate()}
+                          {isToday && (
+                            <span className="ml-1 text-xs bg-blue-600 text-white px-1 rounded">
+                              Today
+                            </span>
+                          )}
+                        </span>
+                        {canSchedule && dayEvents.length === 0 && (
+                          <PlusIcon 
+                            className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Schedule maintenance"
+                          />
                         )}
                       </div>
                       
@@ -176,8 +229,16 @@ const CalendarPage: React.FC = () => {
                         {dayEvents.slice(0, 3).map(event => (
                           <div
                             key={event.id}
-                            className="text-xs p-1 rounded bg-blue-100 text-blue-800 truncate"
-                            title={event.subject}
+                            className={`text-xs p-1 rounded truncate cursor-pointer transition-colors ${
+                              event.request_type === 'preventive' 
+                                ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                            }`}
+                            title={`${event.subject} - ${event.equipment?.name}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Could add event detail modal here
+                            }}
                           >
                             {event.subject}
                           </div>
@@ -188,6 +249,22 @@ const CalendarPage: React.FC = () => {
                           </div>
                         )}
                       </div>
+
+                      {/* Schedule button overlay for future dates */}
+                      {canSchedule && isSelected && (
+                        <div className="absolute inset-0 bg-blue-50 bg-opacity-90 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleScheduleForDate(day);
+                            }}
+                            className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium hover:bg-blue-700 transition-colors"
+                          >
+                            <PlusIcon className="h-3 w-3 inline mr-1" />
+                            Schedule
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -201,9 +278,20 @@ const CalendarPage: React.FC = () => {
       {selectedDate && (
         <div className="card">
           <div className="card-header">
-            <h3 className="text-lg font-medium text-gray-900">
-              Events for {formatDate(selectedDate, 'MMMM d, yyyy')}
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">
+                Events for {formatDate(selectedDate, 'MMMM d, yyyy')}
+              </h3>
+              {selectedDate >= new Date(new Date().setHours(0, 0, 0, 0)) && (
+                <button
+                  onClick={() => handleScheduleForDate(selectedDate)}
+                  className="btn-primary btn-sm"
+                >
+                  <PlusIcon className="w-4 h-4 mr-1" />
+                  Schedule for this date
+                </button>
+              )}
+            </div>
           </div>
           <div className="card-body">
             {getEventsForDate(selectedDate).length > 0 ? (
@@ -243,10 +331,17 @@ const CalendarPage: React.FC = () => {
               <div className="text-center py-8">
                 <CalendarIcon className="mx-auto h-8 w-8 text-gray-400" />
                 <p className="mt-2 text-sm text-gray-500">No events scheduled for this date</p>
-                <button className="btn-primary mt-4">
-                  <PlusIcon className="w-4 h-4 mr-2" />
-                  Schedule Maintenance
-                </button>
+                {selectedDate >= new Date(new Date().setHours(0, 0, 0, 0)) ? (
+                  <button 
+                    onClick={() => handleScheduleForDate(selectedDate)}
+                    className="btn-primary mt-4"
+                  >
+                    <PlusIcon className="w-4 h-4 mr-2" />
+                    Schedule Maintenance
+                  </button>
+                ) : (
+                  <p className="mt-2 text-xs text-gray-400">Cannot schedule maintenance for past dates</p>
+                )}
               </div>
             )}
           </div>
@@ -334,6 +429,31 @@ const CalendarPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      {showCreateRequestModal && (
+        <CreateRequestModal
+          isOpen={showCreateRequestModal}
+          onClose={() => {
+            setShowCreateRequestModal(false);
+            setPreselectedDate(null);
+          }}
+          onSuccess={handleRequestCreated}
+          preselectedDate={preselectedDate}
+        />
+      )}
+
+      {showScheduleMaintenanceModal && (
+        <ScheduleMaintenanceModal
+          isOpen={showScheduleMaintenanceModal}
+          onClose={() => {
+            setShowScheduleMaintenanceModal(false);
+            setPreselectedDate(null);
+          }}
+          onSuccess={handleRequestCreated}
+          preselectedDate={preselectedDate}
+        />
+      )}
     </div>
   );
 };

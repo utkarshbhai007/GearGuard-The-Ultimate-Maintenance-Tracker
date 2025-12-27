@@ -8,6 +8,8 @@ import {
   CogIcon,
   PlayIcon,
   PauseIcon,
+  PlusIcon,
+  ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import { requestsAPI, dashboardAPI } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,6 +17,7 @@ import { MaintenanceRequest } from '../../types';
 import LoadingSpinner from '../common/LoadingSpinner';
 import Badge from '../common/Badge';
 import WorkHoursModal from '../modals/WorkHoursModal';
+import UpdateTaskModal from '../modals/UpdateTaskModal';
 import { formatRelativeTime, getStatusColor, getPriorityColor, isOverdue } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -31,6 +34,7 @@ const TechnicianDashboard: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [showWorkHoursModal, setShowWorkHoursModal] = useState(false);
+  const [showUpdateTaskModal, setShowUpdateTaskModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -96,7 +100,7 @@ const TechnicianDashboard: React.FC = () => {
   };
 
   const handleUpdateTaskStatus = () => {
-    navigate('/requests');
+    setShowUpdateTaskModal(true);
   };
 
   const handleLogWorkHours = () => {
@@ -113,6 +117,32 @@ const TechnicianDashboard: React.FC = () => {
 
   const handleWorkHoursSuccess = () => {
     fetchTechnicianData(); // Refresh dashboard data
+  };
+
+  const handleUpdateTaskSuccess = () => {
+    fetchTechnicianData(); // Refresh dashboard data
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'new':
+        return <ClockIcon className="w-4 h-4" />;
+      case 'in_progress':
+        return <PlayIcon className="w-4 h-4" />;
+      case 'on_hold':
+        return <PauseIcon className="w-4 h-4" />;
+      case 'repaired':
+        return <CheckCircleIcon className="w-4 h-4" />;
+      default:
+        return <ClockIcon className="w-4 h-4" />;
+    }
+  };
+
+  const getPriorityIcon = (priority: string) => {
+    if (priority === 'high' || priority === 'critical') {
+      return <ExclamationTriangleIcon className="w-4 h-4" />;
+    }
+    return null;
   };
 
   if (isLoading) {
@@ -288,128 +318,238 @@ const TechnicianDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* My Tasks */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Active Tasks */}
-        <div className="card">
-          <div className="card-header">
-            <h3 className="text-lg font-medium text-gray-900">My Active Tasks</h3>
-          </div>
-          <div className="card-body">
-            {myTasks.length > 0 ? (
-              <div className="space-y-4">
-                {myTasks.filter(task => task.status !== 'repaired').map((task) => (
-                  <div key={task.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{task.subject}</h4>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {task.equipment?.name} • {task.equipment?.location}
-                        </p>
-                        <div className="flex items-center space-x-2 mt-2">
-                          <Badge className={getStatusColor(task.status)} size="sm">
-                            {task.status.replace('_', ' ')}
-                          </Badge>
-                          <Badge className={getPriorityColor(task.priority)} size="sm">
-                            {task.priority}
-                          </Badge>
+      {/* My Tasks - Enhanced Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Active Tasks - Main Section */}
+        <div className="lg:col-span-2">
+          <div className="card">
+            <div className="card-header">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <WrenchScrewdriverIcon className="w-6 h-6 text-blue-600 mr-2" />
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">My Tasks</h3>
+                    <p className="text-sm text-gray-500">Manage your assigned maintenance tasks</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                    {myTasks.length} active task{myTasks.length !== 1 ? 's' : ''}
+                  </span>
+                  <button
+                    onClick={handleUpdateTaskStatus}
+                    className="btn-primary btn-sm flex items-center"
+                  >
+                    <PlusIcon className="w-4 h-4 mr-1" />
+                    Update Tasks
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="card-body">
+              {myTasks.length > 0 ? (
+                <div className="space-y-4">
+                  {myTasks.filter(task => task.status !== 'repaired').slice(0, 6).map((task) => (
+                    <div key={task.id} className="group relative border-2 border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-md transition-all duration-200">
+                      {/* Priority Indicator */}
+                      {(task.priority === 'high' || task.priority === 'critical') && (
+                        <div className="absolute top-3 right-3">
+                          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                        </div>
+                      )}
+
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                            {task.subject}
+                          </h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {task.equipment?.name} • {task.equipment?.location}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <div className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border ${getStatusColor(task.status)}`}>
+                            {getStatusIcon(task.status)}
+                            <span className="ml-1 capitalize">{task.status.replace('_', ' ')}</span>
+                          </div>
+                          <div className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border ${getPriorityColor(task.priority)}`}>
+                            {getPriorityIcon(task.priority)}
+                            <span className={getPriorityIcon(task.priority) ? 'ml-1' : ''}>{task.priority}</span>
+                          </div>
                           {task.scheduled_date && isOverdue(task.scheduled_date) && task.status !== 'repaired' && (
                             <Badge variant="danger" size="sm">
                               Overdue
                             </Badge>
                           )}
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">
-                          Created {task.created_at ? formatRelativeTime(task.created_at) : 'Unknown'}
-                        </p>
                       </div>
-                      <div className="flex flex-col space-y-2">
-                        {task.status === 'new' && (
-                          <button
-                            onClick={() => handleStartTask(task.id)}
-                            className="btn-primary btn-sm flex items-center"
-                          >
-                            <PlayIcon className="w-4 h-4 mr-1" />
-                            Start
-                          </button>
-                        )}
-                        {task.status === 'in_progress' && (
-                          <button
-                            onClick={() => handleCompleteTask(task.id)}
-                            className="btn-success btn-sm flex items-center"
-                          >
-                            <CheckCircleIcon className="w-4 h-4 mr-1" />
-                            Complete
-                          </button>
-                        )}
+
+                      {/* Progress Bar */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                          <span>Progress</span>
+                          <span className="font-medium">{task.completion_percentage || 0}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              (task.completion_percentage || 0) === 100 
+                                ? 'bg-green-500' 
+                                : (task.completion_percentage || 0) >= 50 
+                                  ? 'bg-blue-500' 
+                                  : 'bg-yellow-500'
+                            }`}
+                            style={{ width: `${task.completion_percentage || 0}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center text-xs text-gray-500">
+                          <ClockIcon className="w-3 h-3 mr-1" />
+                          {task.created_at ? formatRelativeTime(task.created_at) : 'Unknown'}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {task.status === 'new' && (
+                            <button
+                              onClick={() => handleStartTask(task.id)}
+                              className="btn-primary btn-sm flex items-center"
+                            >
+                              <PlayIcon className="w-3 h-3 mr-1" />
+                              Start
+                            </button>
+                          )}
+                          {task.status === 'in_progress' && (
+                            <button
+                              onClick={() => handleCompleteTask(task.id)}
+                              className="btn-success btn-sm flex items-center"
+                            >
+                              <CheckCircleIcon className="w-3 h-3 mr-1" />
+                              Complete
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  ))}
+                  
+                  {myTasks.filter(task => task.status !== 'repaired').length > 6 && (
+                    <div className="text-center pt-4">
+                      <button
+                        onClick={handleUpdateTaskStatus}
+                        className="btn-outline flex items-center mx-auto"
+                      >
+                        View All Tasks
+                        <ArrowRightIcon className="w-4 h-4 ml-2" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <WrenchScrewdriverIcon className="w-8 h-8 text-gray-400" />
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <WrenchScrewdriverIcon className="mx-auto h-8 w-8 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-500">No active tasks assigned</p>
-              </div>
-            )}
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Active Tasks</h4>
+                  <p className="text-gray-500 max-w-sm mx-auto">
+                    You don't have any active maintenance tasks assigned to you at the moment.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="card">
-          <div className="card-header">
-            <h3 className="text-lg font-medium text-gray-900">Quick Actions</h3>
-          </div>
-          <div className="card-body">
-            <div className="space-y-3">
-              <button 
-                onClick={handleUpdateTaskStatus}
-                className="w-full btn-primary flex items-center justify-center"
-              >
-                <WrenchScrewdriverIcon className="w-5 h-5 mr-2" />
-                Update Task Status
-              </button>
-              <button 
-                onClick={handleLogWorkHours}
-                className="w-full btn-outline flex items-center justify-center"
-              >
-                <ClockIcon className="w-5 h-5 mr-2" />
-                Log Work Hours
-              </button>
-              <button 
-                onClick={handleViewEquipmentDetails}
-                className="w-full btn-outline flex items-center justify-center"
-              >
-                <CogIcon className="w-5 h-5 mr-2" />
-                View Equipment Details
-              </button>
-              <button 
-                onClick={handleCheckSchedule}
-                className="w-full btn-outline flex items-center justify-center"
-              >
-                <CalendarIcon className="w-5 h-5 mr-2" />
-                Check Schedule
-              </button>
+        {/* Quick Actions & Performance */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <div className="card">
+            <div className="card-header">
+              <h3 className="text-lg font-medium text-gray-900">Quick Actions</h3>
             </div>
+            <div className="card-body">
+              <div className="space-y-3">
+                <button 
+                  onClick={handleUpdateTaskStatus}
+                  className="w-full btn-primary flex items-center justify-center"
+                >
+                  <WrenchScrewdriverIcon className="w-5 h-5 mr-2" />
+                  Update Task Status
+                </button>
+                <button 
+                  onClick={handleLogWorkHours}
+                  className="w-full btn-outline flex items-center justify-center"
+                >
+                  <ClockIcon className="w-5 h-5 mr-2" />
+                  Log Work Hours
+                </button>
+                <button 
+                  onClick={handleViewEquipmentDetails}
+                  className="w-full btn-outline flex items-center justify-center"
+                >
+                  <CogIcon className="w-5 h-5 mr-2" />
+                  View Equipment Details
+                </button>
+                <button 
+                  onClick={handleCheckSchedule}
+                  className="w-full btn-outline flex items-center justify-center"
+                >
+                  <CalendarIcon className="w-5 h-5 mr-2" />
+                  Check Schedule
+                </button>
+              </div>
+            </div>
+          </div>
 
-            {/* Performance Summary */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">My Performance</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tasks Completed</span>
-                  <span className="font-medium text-green-600">{stats.completed}</span>
+          {/* Performance Summary */}
+          <div className="card">
+            <div className="card-header">
+              <h3 className="text-lg font-medium text-gray-900">My Performance</h3>
+            </div>
+            <div className="card-body">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Tasks Completed</span>
+                  <div className="flex items-center">
+                    <span className="font-bold text-green-600 text-lg">{stats.completed}</span>
+                    <CheckCircleIcon className="w-4 h-4 text-green-600 ml-1" />
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">In Progress</span>
-                  <span className="font-medium text-yellow-600">{stats.inProgress}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">In Progress</span>
+                  <div className="flex items-center">
+                    <span className="font-bold text-yellow-600 text-lg">{stats.inProgress}</span>
+                    <ClockIcon className="w-4 h-4 text-yellow-600 ml-1" />
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Completion Rate</span>
-                  <span className="font-medium text-blue-600">
-                    {stats.totalAssigned > 0 ? Math.round((stats.completed / (stats.totalAssigned + stats.completed)) * 100) : 0}%
-                  </span>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Completion Rate</span>
+                  <div className="flex items-center">
+                    <span className="font-bold text-blue-600 text-lg">
+                      {stats.totalAssigned > 0 ? Math.round((stats.completed / (stats.totalAssigned + stats.completed)) * 100) : 0}%
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Performance Progress Bar */}
+                <div className="pt-2">
+                  <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                    <span>Overall Progress</span>
+                    <span className="font-medium">
+                      {stats.totalAssigned > 0 ? Math.round((stats.completed / (stats.totalAssigned + stats.completed)) * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300"
+                      style={{ 
+                        width: `${stats.totalAssigned > 0 ? Math.round((stats.completed / (stats.totalAssigned + stats.completed)) * 100) : 0}%` 
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -460,6 +600,12 @@ const TechnicianDashboard: React.FC = () => {
         isOpen={showWorkHoursModal}
         onClose={() => setShowWorkHoursModal(false)}
         onSuccess={handleWorkHoursSuccess}
+      />
+      
+      <UpdateTaskModal
+        isOpen={showUpdateTaskModal}
+        onClose={() => setShowUpdateTaskModal(false)}
+        onSuccess={handleUpdateTaskSuccess}
       />
     </div>
   );

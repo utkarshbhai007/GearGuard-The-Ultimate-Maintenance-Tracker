@@ -413,7 +413,31 @@ router.patch('/:id/status', authenticateToken, async (req, res) => {
     if (status === 'repaired') {
       await equipment.update({ status: 'active' });
     } else if (status === 'scrap') {
-      await equipment.update({ status: 'scrapped' });
+      // Enhanced scrap logic with detailed logging
+      await equipment.update({ 
+        status: 'scrapped',
+        notes: `${equipment.notes || ''}\n\n[SCRAPPED VIA REQUEST] ${new Date().toISOString()}: Equipment marked as scrapped due to maintenance request #${request.id}\nRequest: ${request.subject}\nScrapped by: ${req.user.first_name} ${req.user.last_name}`.trim()
+      });
+
+      // Cancel all other pending maintenance requests for this equipment
+      await MaintenanceRequest.update(
+        { 
+          status: 'cancelled',
+          notes: `${MaintenanceRequest.notes || ''}\n\n[AUTO-CANCELLED] ${new Date().toISOString()}: Equipment has been scrapped via request #${request.id}`.trim()
+        },
+        {
+          where: {
+            equipment_id: request.equipment_id,
+            id: { [Op.ne]: request.id }, // Don't cancel the current request
+            status: { [Op.in]: ['new', 'assigned', 'in_progress', 'on_hold'] }
+          }
+        }
+      );
+
+      // Add detailed notes to the scrap request
+      await request.update({
+        notes: `${request.notes || ''}\n\n[EQUIPMENT SCRAPPED] ${new Date().toISOString()}: Equipment ${equipment.name} (${equipment.serial_number}) has been marked as scrapped.\nReason: ${request.subject}\nProcessed by: ${req.user.first_name} ${req.user.last_name}`.trim()
+      });
     }
 
     // Emit real-time update

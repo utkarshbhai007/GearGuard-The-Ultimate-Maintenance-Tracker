@@ -2,8 +2,10 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AIAssistantProvider, useAIAssistant } from './contexts/AIAssistantContext';
 import Layout from './components/layout/Layout';
 import LoadingSpinner from './components/common/LoadingSpinner';
+import AIAssistantChatbox from './components/ai/AIAssistantChatbox';
 
 // Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -109,38 +111,53 @@ const AppRoutes: React.FC = () => {
   );
 };
 
+// AI Assistant Wrapper Component
+const AIAssistantWrapper: React.FC = () => {
+  const { isChatboxOpen, toggleChatbox } = useAIAssistant();
+  
+  return (
+    <AIAssistantChatbox 
+      isOpen={isChatboxOpen} 
+      onToggle={toggleChatbox} 
+    />
+  );
+};
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <div className="App">
-          <AppRoutes />
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: '#22c55e',
-                  secondary: '#fff',
+      <AIAssistantProvider>
+        <Router>
+          <div className="App">
+            <AppRoutes />
+            <AIAssistantWrapper />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
                 },
-              },
-              error: {
-                duration: 5000,
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
+                success: {
+                  duration: 3000,
+                  iconTheme: {
+                    primary: '#22c55e',
+                    secondary: '#fff',
+                  },
                 },
-              },
-            }}
-          />
-        </div>
-      </Router>
+                error: {
+                  duration: 5000,
+                  iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+            />
+          </div>
+        </Router>
+      </AIAssistantProvider>
     </AuthProvider>
   );
 };

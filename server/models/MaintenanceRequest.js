@@ -69,6 +69,23 @@ const MaintenanceRequest = sequelize.define('MaintenanceRequest', {
       min: 0
     }
   },
+  completion_percentage: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0,
+    validate: {
+      min: 0,
+      max: 100
+    }
+  },
+  progress_notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  estimated_completion: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   assigned_to: {
     type: DataTypes.INTEGER,
     allowNull: true,

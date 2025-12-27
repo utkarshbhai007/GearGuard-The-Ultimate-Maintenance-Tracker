@@ -59,6 +59,18 @@ const KanbanBoard: React.FC = () => {
       return;
     }
 
+    // Special confirmation for scrap status
+    if (newStatus === 'scrap') {
+      const confirmed = window.confirm(
+        `⚠️ WARNING: Moving this request to SCRAP will mark the equipment "${draggedItem.equipment?.name}" as permanently unusable and cancel all other pending requests for this equipment.\n\nThis action cannot be undone. Are you sure you want to proceed?`
+      );
+      
+      if (!confirmed) {
+        setDraggedItem(null);
+        return;
+      }
+    }
+
     try {
       // Optimistically update the UI
       const updatedKanban = { ...kanbanData };
@@ -79,7 +91,15 @@ const KanbanBoard: React.FC = () => {
       
       // Update on server
       await requestsAPI.updateStatus(draggedItem.id, newStatus);
-      toast.success(`Request moved to ${newStatus.replace('_', ' ')}`);
+      
+      if (newStatus === 'scrap') {
+        toast.success(`Equipment "${draggedItem.equipment?.name}" has been marked as scrapped`, {
+          duration: 5000,
+          icon: '⚠️'
+        });
+      } else {
+        toast.success(`Request moved to ${newStatus.replace('_', ' ')}`);
+      }
       
     } catch (error: any) {
       console.error('Failed to update request status:', error);

@@ -115,29 +115,56 @@ const EquipmentList: React.FC = () => {
       {filteredEquipment.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEquipment.map((item) => (
-            <div key={item.id} className="card hover:shadow-lg transition-shadow duration-200 relative">
+            <div 
+              key={item.id} 
+              className={`card hover:shadow-lg transition-shadow duration-200 relative ${
+                item.status === 'scrapped' 
+                  ? 'opacity-75 bg-red-50 border-red-200' 
+                  : ''
+              }`}
+            >
               <Link to={`/equipment/${item.id}`} className="block">
+                {/* Scrapped Overlay */}
+                {item.status === 'scrapped' && (
+                  <div className="absolute inset-0 bg-red-500 bg-opacity-10 rounded-lg flex items-center justify-center z-10 pointer-events-none">
+                    <div className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg transform -rotate-12">
+                      SCRAPPED
+                    </div>
+                  </div>
+                )}
+                
                 <div className="card-body">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-medium text-gray-900 mb-1">
+                      <h3 className={`text-lg font-medium mb-1 ${
+                        item.status === 'scrapped' ? 'text-gray-500 line-through' : 'text-gray-900'
+                      }`}>
                         {item.name}
                       </h3>
-                      <p className="text-sm text-gray-500 mb-2">
+                      <p className={`text-sm mb-2 ${
+                        item.status === 'scrapped' ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
                         {item.serial_number}
                       </p>
                       <div className="flex flex-wrap gap-2 mb-3">
                         <Badge variant="primary" size="sm">
                           {item.category}
                         </Badge>
-                        <Badge className={getStatusColor(item.status)} size="sm">
+                        <Badge 
+                          className={`${getStatusColor(item.status)} ${
+                            item.status === 'scrapped' ? 'bg-red-100 text-red-800 border-red-300' : ''
+                          }`} 
+                          size="sm"
+                        >
                           {item.status.replace('_', ' ')}
                         </Badge>
                         <Badge className={getConditionColor(item.condition)} size="sm">
                           {item.condition}
                         </Badge>
                       </div>
-                      <div className="text-sm text-gray-600 space-y-1">
+                      <div className={`text-sm space-y-1 ${
+                        item.status === 'scrapped' ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
                         <p><span className="font-medium">Department:</span> {item.department}</p>
                         <p><span className="font-medium">Location:</span> {item.location}</p>
                         {item.maintenanceTeam && (
@@ -156,11 +183,16 @@ const EquipmentList: React.FC = () => {
                 </div>
               </Link>
               
-              {/* Edit Button */}
+              {/* Edit Button - Disabled for scrapped equipment */}
               <button
                 onClick={(e) => handleEditEquipment(e, item)}
-                className="absolute top-3 right-3 p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                title="Edit Equipment"
+                disabled={item.status === 'scrapped'}
+                className={`absolute top-3 right-3 p-2 rounded-lg transition-colors ${
+                  item.status === 'scrapped'
+                    ? 'text-gray-300 cursor-not-allowed'
+                    : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                }`}
+                title={item.status === 'scrapped' ? 'Cannot edit scrapped equipment' : 'Edit Equipment'}
               >
                 <PencilIcon className="w-4 h-4" />
               </button>
