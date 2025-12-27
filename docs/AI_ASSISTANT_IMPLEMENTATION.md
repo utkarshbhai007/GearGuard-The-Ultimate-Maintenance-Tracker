@@ -52,9 +52,20 @@ POST /api/ai-assistant/suggestions // Maintenance-specific suggestions
 - **Rate limiting protection**
 
 #### **2. Environment Configuration**
-```env
-GROQ_API_KEY=your_groq_api_key_here
+
+**⚠️ Important Security Note:** Never commit your actual API keys to version control!
+
+1. Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
 ```
+
+2. Add your actual Groq API key to the `.env` file:
+```env
+GROQ_API_KEY=your_actual_groq_api_key_here
+```
+
+3. Get your Groq API key from: https://console.groq.com/keys
 
 ### **Frontend Components**
 
