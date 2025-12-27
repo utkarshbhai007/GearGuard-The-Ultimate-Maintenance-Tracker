@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend Auth Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { margin: 10px; padding: 10px 20px; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>Frontend Authentication Test</h1>
+    
+    <div>
+        <button onclick="testDirectBackend()">Test Direct Backend</button>
+        <button onclick="testViaProxy()">Test Via Proxy (Port 3000)</button>
+        <button onclick="clearStorage()">Clear Storage</button>
+        <button onclick="checkStorage()">Check Storage</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        async function testDirectBackend() {
+            log('Testing direct backend connection...');
+            
+            try {
+                // Test login
+                const loginResponse = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@gearguard.com',
+                        password: 'password123'
+                    })
+                });
+                
+                if (!loginResponse.ok) {
+                    throw new Error(`Login failed: ${loginResponse.status}`);
+                }
+                
+                const loginData = await loginResponse.json();
+                log(`✅ Login successful! Token: ${loginData.token.substring(0, 50)}...`, 'success');
+                
+                // Store token
+                localStorage.setItem('token', loginData.token);
+                localStorage.setItem('user', JSON.stringify(loginData.user));
+                log('✅ Token stored in localStorage', 'success');
+                
+                // Test protected endpoint
+                const dashboardResponse = await fetch('http://localhost:5000/api/dashboard/overview', {
+                    headers: {
+                        'Authorization': `Bearer ${loginData.token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!dashboardResponse.ok) {
+                    throw new Error(`Dashboard failed: ${dashboardResponse.status}`);
+                }
+                
+                const dashboardData = await dashboardResponse.json();
+                log(`✅ Dashboard API successful! Equipment: ${dashboardData.overview.totalEquipment}`, 'success');
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testViaProxy() {
+            log('Testing via proxy (port 3000)...');
+            
+            try {
+                // Test login via proxy
+                const loginResponse = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@gearguard.com',
+                        password: 'password123'
+                    })
+                });
+                
+                if (!loginResponse.ok) {
+                    throw new Error(`Login via proxy failed: ${loginResponse.status}`);
+                }
+                
+                const loginData = await loginResponse.json();
+                log(`✅ Login via proxy successful!`, 'success');
+                
+                // Test protected endpoint via proxy
+                const dashboardResponse = await fetch('http://localhost:3000/api/dashboard/overview', {
+                    headers: {
+                        'Authorization': `Bearer ${loginData.token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!dashboardResponse.ok) {
+                    throw new Error(`Dashboard via proxy failed: ${dashboardResponse.status}`);
+                }
+                
+                const dashboardData = await dashboardResponse.json();
+                log(`✅ Dashboard via proxy successful!`, 'success');
+                
+            } catch (error) {
+                log(`❌ Proxy error: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearStorage() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            log('🗑️ Storage cleared', 'info');
+        }
+        
+        function checkStorage() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            
+            log(`🔍 Token exists: ${!!token}`, 'info');
+            if (token) {
+                log(`🔑 Token preview: ${token.substring(0, 50)}...`, 'info');
+            }
+            
+            log(`👤 User exists: ${!!user}`, 'info');
+            if (user) {
+                try {
+                    const userData = JSON.parse(user);
+                    log(`👤 User: ${userData.first_name} ${userData.last_name} (${userData.email})`, 'info');
+                } catch (e) {
+                    log(`❌ User data parse error: ${e.message}`, 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test</title>
+</head>
+<body>
+    <h1>Testing CORS and API</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testWithToken()">Test With Token</button>
+    <div id="results"></div>
+
+    <script>
+        let token = null;
+        
+        async function testLogin() {
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@gearguard.com',
+                        password: 'password123'
+                    })
+                });
+                
+                const data = await response.json();
+                token = data.token;
+                
+                document.getElementById('results').innerHTML = `
+                    <h3>Login Result:</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Token: ${token ? token.substring(0, 50) + '...' : 'None'}</p>
+                    <p>User: ${data.user ? data.user.first_name + ' ' + data.user.last_name : 'None'}</p>
+                `;
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <h3>Login Error:</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        async function testWithToken() {
+            if (!token) {
+                alert('Please login first');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/dashboard/overview', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                document.getElementById('results').innerHTML += `
+                    <h3>Dashboard Result:</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Total Equipment: ${data.overview ? data.overview.totalEquipment : 'None'}</p>
+                    <p>Total Requests: ${data.overview ? data.overview.totalRequests : 'None'}</p>
+                `;
+            } catch (error) {
+                document.getElementById('results').innerHTML += `
+                    <h3>Dashboard Error:</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
