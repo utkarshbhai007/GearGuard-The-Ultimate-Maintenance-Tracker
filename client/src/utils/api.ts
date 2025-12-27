@@ -246,6 +246,14 @@ export const adminAPI = {
 
 // AI Assistant API
 export const aiAssistantAPI = {
+  // Check AI assistant status
+  getStatus: (): Promise<{
+    enabled: boolean;
+    status: string;
+    message: string;
+  }> =>
+    apiGet('/ai-assistant/status'),
+
   // Send message to AI assistant
   sendMessage: (message: string, context?: string): Promise<{
     success: boolean;

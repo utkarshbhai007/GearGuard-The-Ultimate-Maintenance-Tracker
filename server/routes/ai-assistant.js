@@ -1,16 +1,38 @@
 const express = require('express');
-const { Groq } = require('groq-sdk');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
-// Initialize Groq client
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY
-});
+// Initialize Groq client only if API key is available
+let groq = null;
+let isAIEnabled = false;
+
+try {
+  if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== 'your_groq_api_key_here') {
+    const { Groq } = require('groq-sdk');
+    groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY
+    });
+    isAIEnabled = true;
+    console.log('✅ AI Assistant: Groq API initialized successfully');
+  } else {
+    console.log('⚠️  AI Assistant: Groq API key not configured - AI features disabled');
+  }
+} catch (error) {
+  console.error('❌ AI Assistant: Failed to initialize Groq API:', error.message);
+  isAIEnabled = false;
+}
 
 // AI Assistant chat endpoint
 router.post('/chat', authenticateToken, async (req, res) => {
   try {
+    // Check if AI is enabled
+    if (!isAIEnabled || !groq) {
+      return res.status(503).json({ 
+        error: 'AI Assistant is currently unavailable. Please configure the GROQ_API_KEY environment variable to enable AI features.',
+        code: 'AI_DISABLED'
+      });
+    }
+
     const { message, context } = req.body;
     const { user } = req;
 
@@ -95,6 +117,14 @@ Please provide helpful, accurate, and professional responses related to maintena
 // Get AI suggestions for maintenance tasks
 router.post('/suggestions', authenticateToken, async (req, res) => {
   try {
+    // Check if AI is enabled
+    if (!isAIEnabled || !groq) {
+      return res.status(503).json({ 
+        error: 'AI Assistant is currently unavailable. Please configure the GROQ_API_KEY environment variable to enable AI features.',
+        code: 'AI_DISABLED'
+      });
+    }
+
     const { equipmentType, issue, urgency } = req.body;
     const { user } = req;
 
@@ -142,6 +172,17 @@ Keep the response practical and actionable.`;
       error: 'Unable to generate suggestions at this time.' 
     });
   }
+});
+
+// Check AI status endpoint
+router.get('/status', authenticateToken, (req, res) => {
+  res.json({
+    enabled: isAIEnabled,
+    status: isAIEnabled ? 'active' : 'disabled',
+    message: isAIEnabled 
+      ? 'AI Assistant is ready to help!' 
+      : 'AI Assistant is disabled. Configure GROQ_API_KEY to enable AI features.'
+  });
 });
 
 module.exports = router;

@@ -23,19 +23,51 @@ interface AIAssistantChatboxProps {
 }
 
 const AIAssistantChatbox: React.FC<AIAssistantChatboxProps> = ({ isOpen, onToggle }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      type: 'ai',
-      content: 'Hello! I\'m your GearGuard AI Assistant. I can help you with equipment maintenance, troubleshooting, safety protocols, and system guidance. How can I assist you today?',
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiStatus, setAiStatus] = useState<{ enabled: boolean; status: string; message: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Check AI status on component mount
+  useEffect(() => {
+    checkAIStatus();
+  }, []);
+
+  const checkAIStatus = async () => {
+    try {
+      const response = await aiAssistantAPI.getStatus();
+      setAiStatus(response);
+      
+      // Set initial message based on AI status
+      if (response.enabled) {
+        setMessages([{
+          id: '1',
+          type: 'ai',
+          content: 'Hello! I\'m your GearGuard AI Assistant. I can help you with equipment maintenance, troubleshooting, safety protocols, and system guidance. How can I assist you today?',
+          timestamp: new Date()
+        }]);
+      } else {
+        setMessages([{
+          id: '1',
+          type: 'ai',
+          content: 'AI Assistant is currently unavailable. The system administrator needs to configure the AI service. You can still use all other GearGuard features normally.',
+          timestamp: new Date()
+        }]);
+      }
+    } catch (error) {
+      console.error('Failed to check AI status:', error);
+      setAiStatus({ enabled: false, status: 'error', message: 'Unable to connect to AI service' });
+      setMessages([{
+        id: '1',
+        type: 'ai',
+        content: 'AI Assistant is currently unavailable. Please try again later or contact your system administrator.',
+        timestamp: new Date()
+      }]);
+    }
+  };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -51,6 +83,12 @@ const AIAssistantChatbox: React.FC<AIAssistantChatboxProps> = ({ isOpen, onToggl
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
+
+    // Check if AI is enabled
+    if (!aiStatus?.enabled) {
+      setError('AI Assistant is currently disabled. Please contact your system administrator to enable AI features.');
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -263,20 +301,24 @@ const AIAssistantChatbox: React.FC<AIAssistantChatboxProps> = ({ isOpen, onToggl
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask me anything about maintenance..."
-            className="flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            disabled={isLoading}
+            placeholder={aiStatus?.enabled ? "Ask me anything about maintenance..." : "AI Assistant is currently disabled"}
+            className="flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm disabled:bg-gray-100 disabled:text-gray-500"
+            disabled={isLoading || !aiStatus?.enabled}
           />
           <button
             onClick={sendMessage}
-            disabled={!inputMessage.trim() || isLoading}
+            disabled={!inputMessage.trim() || isLoading || !aiStatus?.enabled}
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            title={!aiStatus?.enabled ? "AI Assistant is disabled" : "Send message"}
           >
             <PaperAirplaneIcon className="h-4 w-4" />
           </button>
         </div>
         <p className="text-xs text-gray-500 mt-2 text-center">
-          AI responses may not always be accurate. Verify important information.
+          {aiStatus?.enabled 
+            ? "AI responses may not always be accurate. Verify important information."
+            : "AI Assistant is disabled. Contact your administrator to enable AI features."
+          }
         </p>
       </div>
     </div>
