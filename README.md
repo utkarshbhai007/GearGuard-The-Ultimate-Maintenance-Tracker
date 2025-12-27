@@ -1,3 +1,10 @@
+Team Leader
+Utkarsh_barad
+
+Team Members
+Sarthakbhuptani123
+Aastha
+Shrushti Vachhani
 # 🛠️ **GearGuard - Maintenance Management System**
 
 A comprehensive, production-ready maintenance management system built with modern web technologies.
