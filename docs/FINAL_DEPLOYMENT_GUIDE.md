@@ -27,7 +27,7 @@ cd client && npm install && cd ..
 ### **3. Database Setup**
 ```bash
 # Setup database with enhanced schema
-node setup-db.js
+node scripts/setup-db.js
 ```
 
 ### **4. Start Production Services**
@@ -45,7 +45,7 @@ npm run dev
 ### **5. Verify System**
 ```bash
 # Run comprehensive verification
-node production-verification.js
+node scripts/production-verification.js
 ```
 
 ---
@@ -207,10 +207,10 @@ node production-verification.js
 node system-status.js
 
 # Comprehensive verification
-node production-verification.js
+node scripts/production-verification.js
 
 # Database verification
-node verify-system.js
+node scripts/verify-system.js
 ```
 
 ### **Backup Procedures**

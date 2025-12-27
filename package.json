@@ -10,8 +10,11 @@
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
     "install-all": "npm install && cd client && npm install",
-    "setup-db": "node setup-db.js",
-    "verify": "node verify-system.js"
+    "setup-db": "node scripts/setup-db.js",
+    "verify": "node scripts/verify-system.js",
+    "production-verify": "node scripts/production-verification.js",
+    "system-status": "node scripts/system-status.js",
+    "test": "node tests/test-server.js"
   },
   "dependencies": {
     "axios": "^1.13.2",
